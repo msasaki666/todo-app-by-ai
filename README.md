@@ -19,7 +19,7 @@
 - フロントエンド: HTML, JavaScript (Vanilla JS)
 - 開発支援: Cursor AI
 
-## セットアップと実行方法
+## セットアップ��行方法
 
 1. Rustとcargoがインストールされていることを確認してください。
 
@@ -53,7 +53,7 @@
 ## 今後の改善点
 
 - データベースを使用した永続化
-- ユーザー認証の追加
+- ユ��ザー認証の追加
 - タスクの編集機能
 - タグやカテゴリの追加
 - テストの追加
@@ -69,6 +69,13 @@
 ## 作者
 
 Motoaki Sasaki （Cursor AIの支援を受けて開発）
+
+## デモ
+
+<video width="640" height="360" controls muted>
+  <source src="docs/demo.mov" type="video/quicktime">
+  お使いのブラウザはビデオタグをサポートしていません。
+</video>
 
 ---
 

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        form {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background-color: white;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        li input[type="checkbox"] {
+            margin-right: 10px;
+        }
+        li span {
+            flex-grow: 1;
+        }
+        li button {
+            background-color: #f44336;
+            padding: 5px 10px;
+            font-size: 14px;
+            border-radius: 4px;
+        }
+        li button:hover {
+            background-color: #d32f2f;
+        }
+        li.completed span {
+            text-decoration: line-through;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <h1>Todo App</h1>
+    <form id="todo-form">
+        <input type="text" name="title" placeholder="新しいタスク" required>
+        <button type="submit">追加</button>
+    </form>
+    <ul id="todo-list"></ul>
+
+    <script>
+    function renderTodo(todo) {
+        return `<li id="todo-${todo.id}" class="${todo.completed ? 'completed' : ''}">
+            <input type="checkbox"
+                ${todo.completed ? 'checked' : ''}
+                class="todo-checkbox"
+            >
+            <span>${todo.title}</span>
+            <button class="delete-btn">削除</button>
+        </li>`;
+    }
+
+    function updateTodoList(todos) {
+        const sortedTodos = todos.sort((a, b) => {
+            if (a.completed === b.completed) {
+                return a.created_at - b.created_at;
+            }
+            return a.completed ? 1 : -1;
+        });
+
+        document.getElementById('todo-list').innerHTML = sortedTodos.map(renderTodo).join('');
+    }
+
+    function addTodoToList(todo) {
+        const todoList = document.getElementById('todo-list');
+        const newTodoElement = document.createElement('div');
+        newTodoElement.innerHTML = renderTodo(todo);
+
+        const firstCompletedTask = todoList.querySelector('.completed');
+        if (firstCompletedTask) {
+            todoList.insertBefore(newTodoElement.firstElementChild, firstCompletedTask);
+        } else {
+            todoList.appendChild(newTodoElement.firstElementChild);
+        }
+    }
+
+    document.getElementById('todo-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const title = this.elements.title.value;
+        fetch('/todos', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `title=${encodeURIComponent(title)}`
+        })
+        .then(response => response.json())
+        .then(todo => {
+            addTodoToList(todo);
+            this.reset();
+        });
+    });
+
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.matches('button.delete-btn')) {
+            const li = e.target.closest('li');
+            const todoId = li.id.split('-')[1];
+            fetch(`/todos/${todoId}`, { method: 'DELETE' })
+                .then(response => {
+                    if (response.ok) {
+                        li.remove();
+                    }
+                });
+        }
+    });
+
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.matches('input.todo-checkbox')) {
+            const li = e.target.closest('li');
+            const todoId = li.id.split('-')[1];
+            const completed = e.target.checked;
+            fetch(`/todos/${todoId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ completed: completed })
+            })
+            .then(response => {
+                if (response.ok) {
+                    li.classList.toggle('completed', completed);
+                    // タスクの位置を更新
+                    const todoList = document.getElementById('todo-list');
+                    if (completed) {
+                        todoList.appendChild(li);
+                    } else {
+                        const firstCompletedTask = todoList.querySelector('.completed');
+                        if (firstCompletedTask) {
+                            todoList.insertBefore(li, firstCompletedTask);
+                        } else {
+                            todoList.appendChild(li);
+                        }
+                    }
+                }
+            });
+        }
+    });
+
+    // 初期表示時にタスクリストを取得
+    fetch('/todos')
+        .then(response => response.json())
+        .then(todos => updateTodoList(todos));
+    </script>
+</body>
+</html>
